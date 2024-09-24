@@ -43,7 +43,9 @@ export default async function (req, res) {
             const desc = asset.content.metadata.description;
             url += NFTmintAddress;
 
-            const messageToSendTransfer = `<b>New ${action}!</b>\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n<b>Price:</b> XSOL ($100)\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> `;
+            const messageToSendTransfer =
+                `<b>New ${action}!</b>\n<b>${name}</b>\n${desc}\n
+            \n<b>Market:</b> <a href='${url}'>${mp}</a>\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> `;
 
             if (action === 'Sell' || action === 'Listing') {
                 await sendToTelegramNFT(messageToSendTransfer, im);
