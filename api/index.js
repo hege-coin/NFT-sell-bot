@@ -1,11 +1,22 @@
-const TELEGRAM_BOT_TOKEN = "7520384919:AAERprTOuhAYvqwkWD4nGEEowBTQW5-1jug";
+require('dotenv').congfig()
+
+
+const TELEGRAM_BOT_TOKEN = process.env.BOT_TOKEN;
 // const TELEGRAM_CHAT_ID = "-1002138064416";
 
 // Main
-const TELEGRAM_CHAT_ID = "-1002031821507";
-const HELIUS_API_KEY = "b37f4ce8-7692-403f-ba77-875b4b271475";
+if (process.env.PROD) {
+    var TELEGRAM_CHAT_ID = process.env.MAIN_CHAT;
+}
+else {
+    var TELEGRAM_CHAT_ID = process.env.TEST_CHAT;
+}
+
+const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
 const HELIUS_RPC_URL = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
--1002031821507
+
+
+
 // Vercel API handler
 export default async function (req, res) {
     if (req.method === 'POST') {
@@ -24,10 +35,12 @@ export default async function (req, res) {
 
             let url, mp, index;
             if (requestBody[0].instructions[2].programId === 'M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K') {
+                // Handle Magic Eden
                 url = `https://magiceden.us/marketplace/hegends?activeTab=myItems&solItemDetailsModal=`;
                 mp = 'Magic Eden';
                 index = 4;
             } else if (requestBody[0].instructions[2].programId === 'TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp') {
+                // Handle Tensor
                 url = `https://www.tensor.trade/item/`;
                 mp = 'Tensor';
                 index = (action === 'Delist' || action === 'Listing') ? 0 : 2;
@@ -102,6 +115,7 @@ async function checkTransactionStatus(signature) {
     return transactionData;
 }
 
+// This function checks the marketplace action
 function extractTransactionType(logMessages) {
     let transactionType = 'Unknown';
     logMessages.forEach(log => {
