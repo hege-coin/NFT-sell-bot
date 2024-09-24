@@ -1,4 +1,4 @@
-require('dotenv').congfig()
+require('dotenv').config();
 
 
 const TELEGRAM_BOT_TOKEN = process.env.BOT_TOKEN;
