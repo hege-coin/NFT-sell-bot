@@ -1,8 +1,11 @@
 const TELEGRAM_BOT_TOKEN = "7520384919:AAERprTOuhAYvqwkWD4nGEEowBTQW5-1jug";
-const TELEGRAM_CHAT_ID = "-1002138064416";
+// const TELEGRAM_CHAT_ID = "-1002138064416";
+
+// Main
+const TELEGRAM_CHAT_ID = "-1002031821507";
 const HELIUS_API_KEY = "b37f4ce8-7692-403f-ba77-875b4b271475";
 const HELIUS_RPC_URL = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
-
+-1002031821507
 // Vercel API handler
 export default async function (req, res) {
     if (req.method === 'POST') {
@@ -44,8 +47,7 @@ export default async function (req, res) {
             url += NFTmintAddress;
 
             const messageToSendTransfer =
-                `<b>New ${action}!</b>\n<b>${name}</b>\n${desc}\n
-            \n<b>Market:</b> <a href='${url}'>${mp}</a>\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> `;
+                `<b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> `;
 
             if (action === 'Sell' || action === 'Listing') {
                 await sendToTelegramNFT(messageToSendTransfer, im);
