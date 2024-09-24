@@ -2,17 +2,17 @@ require('dotenv').config();
 
 
 const TELEGRAM_BOT_TOKEN = process.env.BOT_TOKEN;
-// const TELEGRAM_CHAT_ID = "-1002138064416";
 
 // Main
 if (process.env.PROD) {
     var TELEGRAM_CHAT_ID = process.env.MAIN_CHAT;
 }
+// Test
 else {
     var TELEGRAM_CHAT_ID = process.env.TEST_CHAT;
 }
 
-const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
+const HELIUS_API_KEY = process.env.HELIUS_KEY;
 const HELIUS_RPC_URL = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 
 
