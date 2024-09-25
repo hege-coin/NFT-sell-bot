@@ -1,9 +1,9 @@
-// require('dotenv').config();
-import dotenv from "dotenv";
-import { extractListingPrice } from "./extractListingPrice.js";
-dotenv.config();
+require('dotenv').config();
+const path = require('path');
+const fs = require('fs').promises;
 
 const TELEGRAM_BOT_TOKEN = process.env.BOT_TOKEN;
+
 // Main
 if (process.env.PROD) {
   var TELEGRAM_CHAT_ID = process.env.MAIN_CHAT;
@@ -12,9 +12,25 @@ if (process.env.PROD) {
 else {
   var TELEGRAM_CHAT_ID = process.env.TEST_CHAT;
 }
+
 const HELIUS_API_KEY = process.env.HELIUS_KEY;
 const HELIUS_RPC_URL = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
-const ROYALTY_FEE = 0.08;
+
+// Declare a variable to hold the JSON data
+let jsonData;
+
+// Read the JSON data once and store it in the variable
+async function initializeJson() {
+    try {
+        const filePath = path.join(__dirname, 'rarity.json');
+        const data = await fs.readFile(filePath, 'utf8');
+        jsonData = JSON.parse(data);
+        console.log("JSON Data Loaded");
+    } catch (error) {
+        console.error("Error reading JSON file:", error);
+    }
+}
+
 
 // Vercel API handler
 export default async function (req, res) {
@@ -24,20 +40,13 @@ export default async function (req, res) {
     if (requestBody[0].type !== "TRANSFER") {
       console.log(requestBody[0].signature);
 
-      const transactionData = await checkTransactionStatus(
-        requestBody[0].signature
-      );
-      const action = extractTransactionType(transactionData.meta.logMessages);
-      console.log(action);
-      console.log(
-        "Transaction confirmed:",
-        JSON.stringify(transactionData, null, 2)
-      );
-
-      const Transfertimestamp = new Date(
-        requestBody[0].timestamp * 1000
-      ).toLocaleString();
-      const Transfersignature = `https://solana.fm/tx/${requestBody[0].signature}`;
+            const transactionData = await checkTransactionStatus(requestBody[0].signature);
+            const action = extractTransactionType(transactionData.meta.logMessages);
+            console.log(action);
+            // console.log("Transaction confirmed:", JSON.stringify(transactionData, null, 2));
+            console.log("Transaction confirmed:", JSON.stringify(jsonData, null, 2));
+            const Transfertimestamp = new Date(requestBody[0].timestamp * 1000).toLocaleString();
+            const Transfersignature = `https://solana.fm/tx/${requestBody[0].signature}`;
 
       let url, mp, index;
       if (
@@ -62,28 +71,21 @@ export default async function (req, res) {
         index = 4;
       }
 
-      const NFTmintAddress = requestBody[0].instructions[2]["accounts"][index];
-      console.log(NFTmintAddress);
-      const mintUrl = `https://solana.fm/address/${NFTmintAddress}`;
-      const listingPriceInLamports = await extractListingPrice(requestBody);
-      const listingPriceInSol = (listingPriceInLamports / 1000000000).toFixed(
-        2
-      );
+            const NFTmintAddress = requestBody[0].instructions[2]['accounts'][index];
+            console.log(NFTmintAddress);
+            const mintUrl = `https://solana.fm/address/${NFTmintAddress}`;
+            const asset = await getAssetImageUrl(NFTmintAddress);
+            const im = asset.content.links.image;
+            const name = asset.content.metadata.name;
+            const desc = asset.content.metadata.description;
+            url += NFTmintAddress;
 
-      // Add an 8% royalty fee
-      const priceWithRoyalties = (
-        listingPriceInSol *
-        (1 + ROYALTY_FEE)
-      ).toFixed(2);
-      
-      console.log({ priceWithRoyalties });
-      const asset = await getAssetImageUrl(NFTmintAddress);
-      const im = asset.content.links.image;
-      const name = asset.content.metadata.name;
-      const desc = asset.content.metadata.description;
-      url += NFTmintAddress;
+            const ranking = jsonData.result.data.items.find(obj => obj.mint === NFTmintAddress);
+            const rank = ranking.rank
+            const tier = getTextForRange(rank);
 
-      const messageToSendTransfer = `<b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> `;
+            const messageToSendTransfer =
+                `<b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n<b>Rank: </b>${rank}\n<b>Tier: </b>${tier}\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> `;
 
       if (action === "Sell" || action === "Listing") {
         await sendToTelegramNFT(messageToSendTransfer, im);
@@ -197,3 +199,43 @@ async function getAssetImageUrl(mintAddress) {
   const result = await response.json();
   return result.result;
 }
+
+function getTextForRange(number) {
+  switch (true) {
+    case number >= 1 && number <= 22:
+      return "Legendary";
+    case number > 22 && number <= 111:
+      return "Epic";
+    case number > 111 && number <= 444:
+      return "Rare";
+    case number > 444 && number <= 1111:
+      return "Uncommon";
+    case number > 1111 && number <= 2222:
+      return "Uncommon";
+    default:
+      return "Out of range";
+  }
+}
+
+// Initialize rarity data
+initializeJson();
+
+function getTextForRange(number) {
+    switch (true) {
+        case (number >= 1 && number <= 22):
+            return 'Legendary';
+        case (number > 22 && number <= 111):
+            return 'Epic';
+        case (number > 111 && number <= 444):
+            return 'Rare';
+        case (number > 444 && number <= 1111):
+            return 'Uncommon';
+        case (number > 1111 && number <= 2222):
+            return 'Uncommon';
+        default:
+            return 'Out of range';
+    }
+}
+
+// Initialize rarity data
+initializeJson()
