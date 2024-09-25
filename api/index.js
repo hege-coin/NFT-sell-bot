@@ -41,8 +41,8 @@ export default async function (req, res) {
             const transactionData = await checkTransactionStatus(requestBody[0].signature);
             const action = extractTransactionType(transactionData.meta.logMessages);
             console.log(action);
-            console.log("Transaction confirmed:", JSON.stringify(transactionData, null, 2));
-
+            // console.log("Transaction confirmed:", JSON.stringify(transactionData, null, 2));
+            console.log("Transaction confirmed:", JSON.stringify(jsonData, null, 2));
             const Transfertimestamp = new Date(requestBody[0].timestamp * 1000).toLocaleString();
             const Transfersignature = `https://solana.fm/tx/${requestBody[0].signature}`;
 
