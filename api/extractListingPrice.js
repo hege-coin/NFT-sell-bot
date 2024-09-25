@@ -1,7 +1,7 @@
-import { Program } from "@coral-xyz/anchor";
-import { Connection, PublicKey } from "@solana/web3.js";
-import { SolanaParser } from "@debridge-finance/solana-transaction-parser";
-import BN from "bn.js"; // Import BN for handling large numbers
+const { Program } = require("@coral-xyz/anchor");
+const { Connection, PublicKey } = require("@solana/web3.js");
+const { SolanaParser } = require("@debridge-finance/solana-transaction-parser");
+const BN = require("bn.js");
 
 // Constants
 const RPC_URL = "https://api.mainnet-beta.solana.com";
@@ -38,9 +38,11 @@ const bnToNumber = (bn) => {
 };
 
 // Main function to decode data
-export const extractListingPrice = async (data) => {
+const extractListingPrice = async (data, origin) => {
   const programIdString =
-    data[0].instructions[2].innerInstructions[2].programId;
+    origin === "Tensor"
+      ? "TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp"
+      : "M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K";
 
   let programId;
   try {
@@ -65,36 +67,87 @@ export const extractListingPrice = async (data) => {
     false
   );
 
+  console.log(parsed);
+
+  if (origin === "Tensor") {
+    // HANDLE TENSOR
+    const relevantInstructions = parsed.filter((instruction) => {
+      if (instruction.programId && instruction.programId instanceof PublicKey) {
+        // console.log(
+        //   "Comparing Program IDs:",
+        //   instruction.programId.toBase58(),
+        //   programId.toBase58()
+        // );
+        return (
+          instruction.programId.equals(programId) &&
+          instruction.name === INSTRUCTION_NAME
+        );
+      }
+      console.log("Invalid or missing programId for instruction:", instruction);
+      return false;
+    });
+
+    if (relevantInstructions.length > 0) {
+      // Use map to return an array, but select the first value
+      const rawAmounts = relevantInstructions.map((instruction) => {
+        const { amount } = instruction.args;
+        const rawAmount = bnToNumber(amount);
+        return rawAmount;
+      });
+
+      return rawAmounts[0];
+    } else {
+      console.log(
+        "No matching instructions found for programId:",
+        programId.toBase58()
+      );
+      return null;
+    }
+  } else {
+    // HANDLE MAGIC EDEEN
+    return handleMagicEdenTransaction(parsed);
+  }
+};
+
+const handleMagicEdenTransaction = (parsed) => {
   const relevantInstructions = parsed.filter((instruction) => {
     if (instruction.programId && instruction.programId instanceof PublicKey) {
-      // console.log(
-      //   "Comparing Program IDs:",
-      //   instruction.programId.toBase58(),
-      //   programId.toBase58()
-      // );
-      return (
-        instruction.programId.equals(programId) &&
-        instruction.name === INSTRUCTION_NAME
-      );
+      return instruction.name === "coreSell";
     }
-    console.log("Invalid or missing programId for instruction:", instruction);
     return false;
   });
 
   if (relevantInstructions.length > 0) {
-    // Use map to return an array, but select the first value
-    const rawAmounts = relevantInstructions.map((instruction) => {
-      const { amount } = instruction.args;
-      const rawAmount = bnToNumber(amount);
-      return rawAmount;
-    });
+    const coreSellInstruction = relevantInstructions[0]; // Assuming we care about the first match
+    const { args } = coreSellInstruction;
 
-    return rawAmounts[0];
+    // Inspect and extract data from the args
+    if (args && args.args) {
+      const extractedArgs = args.args;
+
+      console.log("Extracted args:", extractedArgs);
+
+      // Check if the extractedArgs contains an amount or any other relevant field
+      // If it is a BN instance, convert it using bnToNumber
+      const amount = extractedArgs.price
+        ? bnToNumber(extractedArgs.price)
+        : null;
+
+      console.log("Amount (in lamports):", amount ?? "undefined");
+
+      return amount;
+    }
   } else {
-    console.log(
-      "No matching instructions found for programId:",
-      programId.toBase58()
-    );
+    console.log("No coreSell instruction found in the parsed data.");
     return null;
   }
 };
+
+const extractSeller = (data) => {
+  const seller = data[0].feePayer;
+
+  const abbreviatedSeller = `${seller.slice(0, 4)}...${seller.slice(-4)}`;
+  return { seller, abbreviatedSeller };
+};
+
+module.exports = { extractListingPrice, extractSeller };
