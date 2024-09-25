@@ -1,5 +1,5 @@
 require('dotenv').config();
-
+const jsonData = require('../assets/rarity.json');
 
 const TELEGRAM_BOT_TOKEN = process.env.BOT_TOKEN;
 
@@ -59,8 +59,12 @@ export default async function (req, res) {
             const desc = asset.content.metadata.description;
             url += NFTmintAddress;
 
+            const ranking = jsonData.result.data.items.find(obj => obj.mint === '4eu29PZhBe8VZzBEu2ZKPgU6dQtvztds1oo6efeXADyu');
+            const rank = ranking.rank
+            const tier = getTextForRange(rank);
+
             const messageToSendTransfer =
-                `<b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> `;
+                `<b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n<b>Rank: </b><span>${rank}</span>\n<b>Tier:</b><span>${tier}</span>\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> `;
 
             if (action === 'Sell' || action === 'Listing') {
                 await sendToTelegramNFT(messageToSendTransfer, im);
@@ -164,4 +168,21 @@ async function getAssetImageUrl(mintAddress) {
     });
     const result = await response.json();
     return result.result;
+}
+
+function getTextForRange(number) {
+    switch (true) {
+        case (number >= 1 && number <= 22):
+            return 'Legendary';
+        case (number > 22 && number <= 111):
+            return 'Epic';
+        case (number > 111 && number <= 444):
+            return 'Rare';
+        case (number > 444 && number <= 1111):
+            return 'Uncommon';
+        case (number > 1111 && number <= 2222):
+            return 'Uncommon';
+        default:
+            return 'Out of range';
+    }
 }
