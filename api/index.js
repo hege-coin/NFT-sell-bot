@@ -137,7 +137,7 @@ async function main(req, res) {
         Number(priceWithRoyalties) * solPrice
       ).toFixed(0);
 
-      const messageToSendTransfer = `<b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n<b>Rank: </b>${rank}\n<b>Tier: </b>${tier}\n<b>Price: </b>${priceWithRoyalties} SOL ($${priceWithRoyaltiesInUSD})\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a>\n\n<b>Seller: </b><a href='${sellerUrl}'>${abbreviatedSeller}</a>`;
+      const messageToSendTransfer = `<b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n<b>Rank: </b>${rank}\n<b>Tier: </b>${tier}\n<b>Price: </b>${priceWithRoyalties} SOL ($${priceWithRoyaltiesInUSD})\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> | <a href='${sellerUrl}'>Seller</a>`;
 
       if (action === "Sell" || action === "Listing") {
         await sendToTelegramNFT(messageToSendTransfer, im);
