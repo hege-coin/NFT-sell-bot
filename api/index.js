@@ -1,5 +1,5 @@
 require('dotenv').config();
-const jsonData = require('./data/rarity.json');
+const fs = require('fs').promises;
 
 const TELEGRAM_BOT_TOKEN = process.env.BOT_TOKEN;
 
@@ -15,6 +15,19 @@ else {
 const HELIUS_API_KEY = process.env.HELIUS_KEY;
 const HELIUS_RPC_URL = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 
+// Declare a variable to hold the JSON data
+let jsonData;
+
+// Read the JSON data once and store it in the variable
+async function initializeJson() {
+    try {
+        const data = await fs.readFile('/data/rarity.json', 'utf8');
+        jsonData = JSON.parse(data);
+        console.log("JSON Data Loaded");
+    } catch (error) {
+        console.error("Error reading JSON file:", error);
+    }
+}
 
 
 // Vercel API handler
@@ -186,3 +199,6 @@ function getTextForRange(number) {
             return 'Out of range';
     }
 }
+
+// Initialize rarity data
+initializeJson()
