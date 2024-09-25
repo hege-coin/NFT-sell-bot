@@ -1,4 +1,4 @@
-const jsonData = require('./data/rarity.json');
+const jsonData = require('./rarity.json');
 
 
 function getTextForRange(number) {

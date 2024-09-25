@@ -21,7 +21,7 @@ let jsonData;
 // Read the JSON data once and store it in the variable
 async function initializeJson() {
     try {
-        const data = await fs.readFile('./data/rarity.json', 'utf8');
+        const data = await fs.readFile('./rarity.json', 'utf8');
         jsonData = JSON.parse(data);
         console.log("JSON Data Loaded");
     } catch (error) {
