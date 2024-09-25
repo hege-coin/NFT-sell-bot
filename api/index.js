@@ -74,7 +74,7 @@ export default async function (req, res) {
             const desc = asset.content.metadata.description;
             url += NFTmintAddress;
 
-            const ranking = jsonData.result.data.items.find(obj => obj.mint === '4eu29PZhBe8VZzBEu2ZKPgU6dQtvztds1oo6efeXADyu');
+            const ranking = jsonData.result.data.items.find(obj => obj.mint === NFTmintAddress);
             const rank = ranking.rank
             const tier = getTextForRange(rank);
 
