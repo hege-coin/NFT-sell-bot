@@ -1,4 +1,4 @@
-import app from "./server/app.js";
+const app = require("./server/app.js");
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
