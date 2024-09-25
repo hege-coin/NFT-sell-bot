@@ -4,7 +4,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { main } = require("../../api/index.js");
+const main  = require("../../api/index.js");
 
 router.post("/", async (req, res) => {
   const action = main(req);

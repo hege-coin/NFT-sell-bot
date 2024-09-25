@@ -41,7 +41,7 @@ async function initializeJson() {
 }
 
 // Vercel API handler
-async function main(req, res) {
+module.exports = async function main(req, res) {
   if (req.method === "POST") {
     const requestBody = req.body;
 
@@ -150,7 +150,7 @@ async function main(req, res) {
   } else {
     res.status(405).send("Method not allowed.");
   }
-}
+};
 
 // This function is used to check the transaction status
 async function checkTransactionStatus(signature) {
@@ -270,7 +270,3 @@ function getTextForRange(number) {
 }
 
 initializeJson();
-
-module.exports = {
-  main,
-};
