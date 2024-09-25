@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 const fs = require('fs').promises;
 
 const TELEGRAM_BOT_TOKEN = process.env.BOT_TOKEN;
@@ -21,7 +22,8 @@ let jsonData;
 // Read the JSON data once and store it in the variable
 async function initializeJson() {
     try {
-        const data = await fs.readFile('./rarity.json', 'utf8');
+        const filePath = path.join(__dirname, 'rarity.json');
+        const data = await fs.readFile(filePath, 'utf8');
         jsonData = JSON.parse(data);
         console.log("JSON Data Loaded");
     } catch (error) {
