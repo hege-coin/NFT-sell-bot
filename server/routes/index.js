@@ -1,13 +1,14 @@
 "use strict";
 
-import express from "express";
+// import express from "express";
+const express = require("express");
 const router = express.Router();
 
-import handleRequest from "../../api/index.js";
+const { main } = require("../../api/index.js");
 
 router.post("/", async (req, res) => {
-  const action = handleRequest(req);
+  const action = main(req);
   res.send(action);
 });
 
-export default router;
+module.exports = router;

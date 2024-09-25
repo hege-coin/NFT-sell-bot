@@ -1,7 +1,9 @@
 "use strict";
-import express from "express";
+// import express from "express";
+const express = require("express");
 
-import routes from "./routes/index.js";
+const routes = require("./routes/index.js");
+
 const app = express();
 
 // app.use(cors());
@@ -15,4 +17,4 @@ app.use(function (req, res, next) {
   return next(new NotFoundError());
 });
 
-export default app;
+module.exports = app;
