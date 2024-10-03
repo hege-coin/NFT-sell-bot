@@ -5,7 +5,8 @@ const {
   extractListingPrice,
   extractSeller,
 } = require("./extractListingPrice.js");
-const { fetchSolPrice } = require("./getSolPrice.js");
+const { addCommas } = require("../helpers/addCommas.js");
+const CoingeckoController = require("../controllers/Coingecko.controller.js");
 
 const TELEGRAM_BOT_TOKEN = process.env.BOT_TOKEN;
 const PROD = Boolean(process.env.PROD);
@@ -71,7 +72,11 @@ module.exports = async function main(req, res) {
         url = `https://magiceden.us/marketplace/hegends?activeTab=myItems&solItemDetailsModal=`;
         mp = "Magic Eden";
         index = 4;
-        listingPriceInLamports = await extractListingPrice(requestBody, "ME");
+        listingPriceInLamports = await extractListingPrice(
+          requestBody,
+          action,
+          "ME"
+        );
       } else if (
         requestBody[0].instructions[2].programId ===
         "TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp"
@@ -83,6 +88,7 @@ module.exports = async function main(req, res) {
         index = action === "Delist" || action === "Listing" ? 0 : 2;
         listingPriceInLamports = await extractListingPrice(
           requestBody,
+          action,
           "Tensor"
         );
       } else {
@@ -93,7 +99,6 @@ module.exports = async function main(req, res) {
 
       const priceDecimals = origin === "ME" ? 3 : 2;
       const NFTmintAddress = requestBody[0].instructions[2]["accounts"][index];
-      console.log(NFTmintAddress);
       const mintUrl = `https://solana.fm/address/${NFTmintAddress}`;
       const asset = await getAssetImageUrl(NFTmintAddress);
       const im = asset.content.links.image;
@@ -131,13 +136,25 @@ module.exports = async function main(req, res) {
 
       const sellerUrl = `https://solana.fm/address/${seller}`;
 
-      const solPrice = await fetchSolPrice();
+      const solPrice = await CoingeckoController.fetchSolPrice();
 
       const priceWithRoyaltiesInUSD = (
         Number(priceWithRoyalties) * solPrice
       ).toFixed(0);
 
-      const messageToSendTransfer = `<b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n<b>Rank: </b>${rank}\n<b>Tier: </b>${tier}\n<b>Price: </b>${priceWithRoyalties} SOL ($${priceWithRoyaltiesInUSD})\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> | <a href='${sellerUrl}'>Seller</a>`;
+      const hegends = await CoingeckoController.getHegends();
+     
+      const floorPrice = hegends.floor_price.native_currency;
+      const marketCapSol = Math.round(floorPrice * 2222);
+
+      const floorPriceInUSD = (floorPrice * solPrice).toFixed(0);
+      const marketCapInUSD = addCommas(Math.round(marketCapSol * solPrice));
+
+      const volume24h = hegends.volume_24h.native_currency;
+      const volume24hInUSD = (volume24h * solPrice).toFixed(0);
+
+      const messageToSendTransfer = `
+      <b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n<b>Rank: </b>${rank}\n<b>Tier: </b>${tier}\n<b>Price: </b>${priceWithRoyalties} SOL ($${priceWithRoyaltiesInUSD})\n\n<b>Floor Price: </b>${floorPrice.toFixed(2)} SOL ($${floorPriceInUSD})\n<b>Volume 24h: </b>${volume24h} SOL ($${volume24hInUSD})\n<b>Market Cap: </b>${marketCapSol.toFixed(0)} SOL ($${marketCapInUSD})\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> | <a href='${sellerUrl}'>Seller</a>`;
 
       if (action === "Sell" || action === "Listing") {
         await sendToTelegramNFT(messageToSendTransfer, im);

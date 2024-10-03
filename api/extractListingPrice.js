@@ -6,6 +6,7 @@ const BN = require("bn.js");
 // Constants
 const RPC_URL = "https://api.mainnet-beta.solana.com";
 const INSTRUCTION_NAME = "listCore";
+const SALE_INSTRUCTION_NAME = "buyCore"; // Name of the sale instruction for Tensor
 
 // Initialize connection and provider
 const connection = new Connection(RPC_URL);
@@ -25,9 +26,7 @@ const fetchIdl = async (programId) => {
 // Helper function to safely convert BN to a JavaScript number or fallback
 const bnToNumber = (bn) => {
   try {
-    // Check if it's a BN instance and safely convert
     if (bn instanceof BN) {
-      // Use `.toNumber()` if you're sure it's safe (less than 53-bit precision)
       return bn.toNumber();
     }
     return null;
@@ -38,7 +37,7 @@ const bnToNumber = (bn) => {
 };
 
 // Main function to decode data
-const extractListingPrice = async (data, origin) => {
+const extractListingPrice = async (data, action, origin) => {
   const programIdString =
     origin === "Tensor"
       ? "TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp"
@@ -52,9 +51,7 @@ const extractListingPrice = async (data, origin) => {
     return;
   }
 
-  // console.log("Fetching IDL for program:", programId.toBase58());
   const idl = await fetchIdl(programId);
-
   if (!idl) {
     console.error("Failed to fetch IDL");
     return;
@@ -67,48 +64,70 @@ const extractListingPrice = async (data, origin) => {
     false
   );
 
-  console.log(parsed);
-
   if (origin === "Tensor") {
-    // HANDLE TENSOR
-    const relevantInstructions = parsed.filter((instruction) => {
-      if (instruction.programId && instruction.programId instanceof PublicKey) {
-        // console.log(
-        //   "Comparing Program IDs:",
-        //   instruction.programId.toBase58(),
-        //   programId.toBase58()
-        // );
-        return (
-          instruction.programId.equals(programId) &&
-          instruction.name === INSTRUCTION_NAME
-        );
-      }
-      console.log("Invalid or missing programId for instruction:", instruction);
-      return false;
-    });
-
-    if (relevantInstructions.length > 0) {
-      // Use map to return an array, but select the first value
-      const rawAmounts = relevantInstructions.map((instruction) => {
-        const { amount } = instruction.args;
-        const rawAmount = bnToNumber(amount);
-        return rawAmount;
-      });
-
-      return rawAmounts[0];
-    } else {
-      console.log(
-        "No matching instructions found for programId:",
-        programId.toBase58()
-      );
-      return null;
-    }
-  } else {
-    // HANDLE MAGIC EDEEN
+    return handleTensorTransaction(parsed, programId, action);
+  } else if (origin === "ME") {
     return handleMagicEdenTransaction(parsed);
+  } else {
+    console.log("Invalid origin");
+    return null;
   }
 };
 
+// Handle Tensor transactions (includes both listing and sale)
+const handleTensorTransaction = (parsed, programId, action) => {
+  // Determine instruction name based on action
+  const instructionName =
+    action === "Sell" ? SALE_INSTRUCTION_NAME : INSTRUCTION_NAME;
+
+  const relevantInstructions = parsed.filter((instruction) => {
+    if (instruction.programId && instruction.programId instanceof PublicKey) {
+      return (
+        instruction.programId.equals(programId) &&
+        instruction.name === instructionName
+      );
+    }
+    console.log("Invalid or missing programId for instruction:", instruction);
+    return false;
+  });
+
+  if (relevantInstructions.length > 0) {
+    // Handle Sale action
+    if (action === "Sell") {
+      const saleInstruction = relevantInstructions[0];
+      return extractSaleAmount(saleInstruction);
+    }
+
+    // Handle Listing action
+    const listingInstruction = relevantInstructions[0];
+    const { amount } = listingInstruction.args;
+    const rawAmount = bnToNumber(amount);
+
+    console.log("Listing amount (in lamports):", rawAmount);
+
+    return rawAmount;
+  } else {
+    console.log(
+      `No matching ${action} instructions found for programId:`,
+      programId.toBase58()
+    );
+    return null;
+  }
+};
+
+// Extract amount from Sale transaction (`buyCore` instruction)
+const extractSaleAmount = (saleInstruction) => {
+  if (saleInstruction.args && saleInstruction.args.maxAmount) {
+    const maxAmount = bnToNumber(saleInstruction.args.maxAmount);
+    console.log("Sale amount (maxAmount in lamports):", maxAmount);
+    return maxAmount;
+  } else {
+    console.log("No maxAmount found in the sale instruction args.");
+    return null;
+  }
+};
+
+// Handle Magic Eden transactions
 const handleMagicEdenTransaction = (parsed) => {
   const relevantInstructions = parsed.filter((instruction) => {
     if (instruction.programId && instruction.programId instanceof PublicKey) {
@@ -118,17 +137,13 @@ const handleMagicEdenTransaction = (parsed) => {
   });
 
   if (relevantInstructions.length > 0) {
-    const coreSellInstruction = relevantInstructions[0]; // Assuming we care about the first match
+    const coreSellInstruction = relevantInstructions[0];
     const { args } = coreSellInstruction;
 
-    // Inspect and extract data from the args
     if (args && args.args) {
       const extractedArgs = args.args;
-
       console.log("Extracted args:", extractedArgs);
 
-      // Check if the extractedArgs contains an amount or any other relevant field
-      // If it is a BN instance, convert it using bnToNumber
       const amount = extractedArgs.price
         ? bnToNumber(extractedArgs.price)
         : null;
@@ -145,7 +160,6 @@ const handleMagicEdenTransaction = (parsed) => {
 
 const extractSeller = (data) => {
   const seller = data[0].feePayer;
-
   const abbreviatedSeller = `${seller.slice(0, 4)}...${seller.slice(-4)}`;
   return { seller, abbreviatedSeller };
 };
