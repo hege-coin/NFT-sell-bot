@@ -5,22 +5,24 @@ const {
   extractListingPrice,
   extractSeller,
 } = require("./extractListingPrice.js");
+const TwitterController = require('../controllers/X.controller');
 const { addCommas } = require("../helpers/addCommas.js");
 const CoingeckoController = require("../controllers/Coingecko.controller.js");
 
 const TELEGRAM_BOT_TOKEN = process.env.BOT_TOKEN;
-const PROD = Boolean(process.env.PROD);
-console.log("PROD", PROD);
-// Main
-if (PROD) {
-  console.log("MAIN_CHAT", process.env.MAIN_CHAT);
-  var TELEGRAM_CHAT_ID = process.env.MAIN_CHAT;
-}
-// Test
-else {
-  console.log("TEST_CHAT", process.env.TEST_CHAT);
-  var TELEGRAM_CHAT_ID = process.env.TEST_CHAT;
-}
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+// const PROD = Boolean(process.env.PROD);
+// console.log("PROD", PROD);
+// // Main
+// if (PROD) {
+//   console.log("MAIN_CHAT", process.env.MAIN_CHAT);
+//   var TELEGRAM_CHAT_ID = process.env.MAIN_CHAT;
+// }
+// // Test
+// else {
+//   console.log("TEST_CHAT", process.env.TEST_CHAT);
+//   var TELEGRAM_CHAT_ID = process.env.TEST_CHAT;
+// }
 
 const HELIUS_API_KEY = process.env.HELIUS_KEY;
 const HELIUS_RPC_URL = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
@@ -50,22 +52,22 @@ module.exports = async function main(req, res) {
       console.log(requestBody[0].signature);
 
       const transactionData = await checkTransactionStatus(
-        requestBody[0].signature
+          requestBody[0].signature
       );
       const action = extractTransactionType(transactionData.meta.logMessages);
       console.log(action);
       // console.log("Transaction confirmed:", JSON.stringify(transactionData, null, 2));
       // console.log("Transaction confirmed:", JSON.stringify(jsonData, null, 2));
       const Transfertimestamp = new Date(
-        requestBody[0].timestamp * 1000
+          requestBody[0].timestamp * 1000
       ).toLocaleString();
       const Transfersignature = `https://solana.fm/tx/${requestBody[0].signature}`;
 
       let url, mp, index, listingPriceInLamports;
       let origin;
       if (
-        requestBody[0].instructions[2].programId ===
-        "M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K"
+          requestBody[0].instructions[2].programId ===
+          "M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K"
       ) {
         // Handle Magic Eden
         origin = "ME";
@@ -73,13 +75,13 @@ module.exports = async function main(req, res) {
         mp = "Magic Eden";
         index = 4;
         listingPriceInLamports = await extractListingPrice(
-          requestBody,
-          action,
-          "ME"
+            requestBody,
+            action,
+            "ME"
         );
       } else if (
-        requestBody[0].instructions[2].programId ===
-        "TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp"
+          requestBody[0].instructions[2].programId ===
+          "TCMPhJdwDryooaGtiocG1u3xcYbRpiJzb283XfCZsDp"
       ) {
         // Handle Tensor
         origin = "Tensor";
@@ -87,9 +89,9 @@ module.exports = async function main(req, res) {
         mp = "Tensor";
         index = action === "Delist" || action === "Listing" ? 0 : 2;
         listingPriceInLamports = await extractListingPrice(
-          requestBody,
-          action,
-          "Tensor"
+            requestBody,
+            action,
+            "Tensor"
         );
       } else {
         url = "";
@@ -107,43 +109,43 @@ module.exports = async function main(req, res) {
       url += NFTmintAddress;
 
       const ranking = jsonData.result.data.items.find(
-        (obj) => obj.mint === NFTmintAddress
+          (obj) => obj.mint === NFTmintAddress
       );
       const rank = ranking.rank;
       const tier = getTextForRange(rank);
 
       const listingPriceInSol = (listingPriceInLamports / 1000000000).toFixed(
-        priceDecimals
+          priceDecimals
       );
 
       const takerFeePercentage = origin === "ME" ? 0.025 : 0.015;
 
       const takerFee = Number(
-        (listingPriceInSol * takerFeePercentage).toFixed(priceDecimals)
+          (listingPriceInSol * takerFeePercentage).toFixed(priceDecimals)
       );
 
       const royaltyFee = Number(
-        (listingPriceInSol * ROYALTY_FEE).toFixed(priceDecimals)
+          (listingPriceInSol * ROYALTY_FEE).toFixed(priceDecimals)
       );
 
       const priceWithRoyalties = (
-        Number(listingPriceInSol) +
-        takerFee +
-        royaltyFee
+          Number(listingPriceInSol) +
+          takerFee +
+          royaltyFee
       ).toFixed(priceDecimals);
 
-      const { seller, abbreviatedSeller } = extractSeller(requestBody);
+      const {seller, abbreviatedSeller} = extractSeller(requestBody);
 
       const sellerUrl = `https://solana.fm/address/${seller}`;
 
       const solPrice = await CoingeckoController.fetchSolPrice();
 
       const priceWithRoyaltiesInUSD = (
-        Number(priceWithRoyalties) * solPrice
+          Number(priceWithRoyalties) * solPrice
       ).toFixed(0);
 
       const hegends = await CoingeckoController.getHegends();
-     
+
       const floorPrice = hegends.floor_price.native_currency;
       const marketCapSol = Math.round(floorPrice * 2222);
 
@@ -156,13 +158,26 @@ module.exports = async function main(req, res) {
       const messageToSendTransfer = `
       <b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n<b>Rank: </b>${rank}\n<b>Tier: </b>${tier}\n<b>Price: </b>${priceWithRoyalties} SOL ($${priceWithRoyaltiesInUSD})\n\n<b>Floor Price: </b>${floorPrice.toFixed(2)} SOL ($${floorPriceInUSD})\n<b>Volume 24h: </b>${volume24h} SOL ($${volume24hInUSD})\n<b>Market Cap: </b>${marketCapSol.toFixed(0)} SOL ($${marketCapInUSD})\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> | <a href='${sellerUrl}'>Seller</a>`;
 
-      if (action === "Sell" || action === "Listing") {
+      if (action === "Listing") {
         await sendToTelegramNFT(messageToSendTransfer, im);
-      }
-    } else {
-      console.log("Transfer Transaction:");
-    }
+      } else if (action === "Sell") {
+        await sendToTelegramNFT(messageToSendTransfer, im);
+        const data = {
+          uri: im,
+          text: `New Hegend Sell!\n\n${name}\n${desc}\n\nRank: ${rank}\nTier: ${tier}\nPrice: ${priceWithRoyalties} SOL (\$${priceWithRoyaltiesInUSD})\n${url}`,
+        };
 
+        try {
+          const tweet = await TwitterController.postToTwitter(data);
+          console.log('Tweet posted:', tweet);
+        } catch (error) {
+          console.error('Error:', error);
+        }
+
+      } else {
+        console.log("Transfer Transaction:");
+      }
+    }
     res.status(200).send("Logged POST request body.");
   } else {
     res.status(405).send("Method not allowed.");
