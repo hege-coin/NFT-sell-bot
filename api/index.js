@@ -164,7 +164,7 @@ module.exports = async function main(req, res) {
         await sendToTelegramNFT(messageToSendTransfer, im);
         const data = {
           uri: im,
-          text: `New Hegend Sell!\n\n${name}\n${desc}\n\nRank: ${rank}\nTier: ${tier}\nPrice: ${priceWithRoyalties} SOL (\$${priceWithRoyaltiesInUSD})\n${url}`,
+          text: `New Hegend Buy!\n\n${name}\n${desc}\n\nRank: ${rank}\nTier: ${tier}\nPrice: ${priceWithRoyalties} SOL (\$${priceWithRoyaltiesInUSD})\n${url}`,
         };
 
         try {
