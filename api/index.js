@@ -159,9 +159,11 @@ module.exports = async function main(req, res) {
       <b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n<b>Rank: </b>${rank}\n<b>Tier: </b>${tier}\n<b>Price: </b>${priceWithRoyalties} SOL ($${priceWithRoyaltiesInUSD})\n\n<b>Floor Price: </b>${floorPrice.toFixed(2)} SOL ($${floorPriceInUSD})\n<b>Volume 24h: </b>${volume24h} SOL ($${volume24hInUSD})\n<b>Market Cap: </b>${marketCapSol.toFixed(0)} SOL ($${marketCapInUSD})\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> | <a href='${sellerUrl}'>Seller</a>`;
 
       if (action === "Listing") {
-        await sendToTelegramNFT(messageToSendTransfer, im);
+        // await sendToTelegramNFT(messageToSendTransfer, im);
       } else if (action === "Sell") {
-        await sendToTelegramNFT(messageToSendTransfer, im);
+        if (priceWithRoyalties >= 1) {
+          await sendToTelegramNFT(messageToSendTransfer, im);
+        }
         const data = {
           uri: im,
           text: `New Hegend Buy!\n\n${name}\n${desc}\n\nRank: ${rank}\nTier: ${tier}\nPrice: ${priceWithRoyalties} SOL (\$${priceWithRoyaltiesInUSD})\n${url}`,
