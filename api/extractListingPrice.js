@@ -148,7 +148,7 @@ const handleMagicEdenTransaction = (parsed) => {
         ? bnToNumber(extractedArgs.price)
         : null;
 
-      console.log("Amount (in lamports):", amount ?? "undefined");
+      // console.log("Amount (in lamports):", amount ?? "undefined");
 
       return amount;
     }

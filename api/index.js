@@ -11,6 +11,7 @@ const CoingeckoController = require("../controllers/Coingecko.controller.js");
 
 const TELEGRAM_BOT_TOKEN = process.env.BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const X_USER = process.env.X_USER;
 // const PROD = Boolean(process.env.PROD);
 // console.log("PROD", PROD);
 // // Main
@@ -155,15 +156,14 @@ module.exports = async function main(req, res) {
       const volume24h = hegends.volume_24h.native_currency;
       const volume24hInUSD = (volume24h * solPrice).toFixed(0);
 
-      const messageToSendTransfer = `
-      <b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n<b>Rank: </b>${rank}\n<b>Tier: </b>${tier}\n<b>Price: </b>${priceWithRoyalties} SOL ($${priceWithRoyaltiesInUSD})\n\n<b>Floor Price: </b>${floorPrice.toFixed(2)} SOL ($${floorPriceInUSD})\n<b>Volume 24h: </b>${volume24h} SOL ($${volume24hInUSD})\n<b>Market Cap: </b>${marketCapSol.toFixed(0)} SOL ($${marketCapInUSD})\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> | <a href='${sellerUrl}'>Seller</a>`;
+      let messageToSendTransfer;
+      // const messageToSendTransfer = `
+      // <b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n<b>Rank: </b>${rank}\n<b>Tier: </b>${tier}\n<b>Price: </b>${priceWithRoyalties} SOL ($${priceWithRoyaltiesInUSD})\n\n<b>Floor Price: </b>${floorPrice.toFixed(2)} SOL ($${floorPriceInUSD})\n<b>Volume 24h: </b>${volume24h} SOL ($${volume24hInUSD})\n<b>Market Cap: </b>${marketCapSol.toFixed(0)} SOL ($${marketCapInUSD})\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> | <a href='${sellerUrl}'>Seller</a>`;
 
       if (action === "Listing") {
         // await sendToTelegramNFT(messageToSendTransfer, im);
       } else if (action === "Sell") {
-        if (priceWithRoyalties >= 1) {
-          await sendToTelegramNFT(messageToSendTransfer, im);
-        }
+
         const data = {
           uri: im,
           text: `New Hegend Buy!\n\n${name}\n${desc}\n\nRank: ${rank}\nTier: ${tier}\nPrice: ${priceWithRoyalties} SOL (\$${priceWithRoyaltiesInUSD})\n${url}`,
@@ -172,8 +172,19 @@ module.exports = async function main(req, res) {
         try {
           const tweet = await TwitterController.postToTwitter(data);
           console.log('Tweet posted:', tweet);
+          console.log('Tweet posted:', tweet.data.id);
+          const tweetURL = `https://x.com/${X_USER}/status/${tweet.data.id}`
+          messageToSendTransfer = `<b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Raid Tweet</b>\n${tweetURL}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n<b>Rank: </b>${rank}\n<b>Tier: </b>${tier}\n<b>Price: </b>${priceWithRoyalties} SOL ($${priceWithRoyaltiesInUSD})\n\n<b>Floor Price: </b>${floorPrice.toFixed(2)} SOL ($${floorPriceInUSD})\n<b>Volume 24h: </b>${volume24h} SOL ($${volume24hInUSD})\n<b>Market Cap: </b>${marketCapSol.toFixed(0)} SOL ($${marketCapInUSD})\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> | <a href='${sellerUrl}'>Seller</a>`;
+
         } catch (error) {
-          console.error('Error:', error);
+          messageToSendTransfer = `
+      <b>New ${action}!</b>\n\n<b>${name}</b>\n${desc}\n\n<b>Market:</b> <a href='${url}'>${mp}</a>\n<b>Rank: </b>${rank}\n<b>Tier: </b>${tier}\n<b>Price: </b>${priceWithRoyalties} SOL ($${priceWithRoyaltiesInUSD})\n\n<b>Floor Price: </b>${floorPrice.toFixed(2)} SOL ($${floorPriceInUSD})\n<b>Volume 24h: </b>${volume24h} SOL ($${volume24hInUSD})\n<b>Market Cap: </b>${marketCapSol.toFixed(0)} SOL ($${marketCapInUSD})\n\n<a href='${Transfersignature}'>TX</a> | <a href='${mintUrl}'>Mint</a> | <a href='${sellerUrl}'>Seller</a>`;
+
+          console.error('X Error:', error);
+        }
+
+        if (priceWithRoyalties >= 1) {
+          await sendToTelegramNFT(messageToSendTransfer, im);
         }
 
       } else {
