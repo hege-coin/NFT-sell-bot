@@ -25,8 +25,10 @@ const X_USER = process.env.X_USER;
 //   var TELEGRAM_CHAT_ID = process.env.TEST_CHAT;
 // }
 
-const HELIUS_API_KEY = process.env.HELIUS_KEY;
-const HELIUS_RPC_URL = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+// const HELIUS_API_KEY = process.env.HELIUS_KEY;
+// const HELIUS_RPC_URL = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+const HELIUS_RPC_URL = process.env.RPC_URL;
+
 const ROYALTY_FEE = 0.08;
 
 // Declare a variable to hold the JSON data

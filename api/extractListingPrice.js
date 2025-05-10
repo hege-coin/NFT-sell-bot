@@ -4,7 +4,7 @@ const { SolanaParser } = require("@debridge-finance/solana-transaction-parser");
 const BN = require("bn.js");
 
 // Constants
-const RPC_URL = "https://api.mainnet-beta.solana.com";
+const RPC_URL = process.env.RPC_URL;
 const INSTRUCTION_NAME = "listCore";
 const SALE_INSTRUCTION_NAME = "buyCore"; // Name of the sale instruction for Tensor
 
