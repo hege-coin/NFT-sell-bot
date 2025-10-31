@@ -1,4 +1,4 @@
-# TG-Hegends
+# Hegends Sell Bot for Telegram
 
 TG-Hegends is a Node.js application that monitors Solana blockchain transactions for NFT listings and sales, specifically for the Hegends collection. It processes these transactions and sends notifications to a Telegram channel.
 
